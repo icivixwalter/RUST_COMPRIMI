@@ -90,14 +90,15 @@ impl ComprimiFile {
                     //destrutturazione di una tupla = assegna ad anno e al mese i due
                     //valori recuperati dalla tupla istanza_file_time.get_anno_mese()
                     let (anno, mese) = istanza_file_time.get_anno_mese();
-                    let nome_file_zip = format!("{}\\{}-{:#02}.rar",self.path_destinazione, anno, mese);
+                    // TODO: aggiungere nome cartella genitore
+                    let nome_file_zip = format!("{}\\{}-{}-{:#02}.rar",self.path_destinazione, "cartella", anno, mese);
 
                     for anno_corrente in self.anno_inizio..=self.anno_fine {
                         for mese_corrente in 1..=12 {
                             if anno == anno_corrente && mese == mese_corrente {
                                 println!("nome del file = {}", nome_file_zip);
                                 println!("path del file = {:?}", dir_entry.path());
-                                let dest = format!("{}\\{}", self.path_destinazione, nome_file_zip);
+                                let dest = format!("{}\\{}-{:#02}", self.path_destinazione,anno,mese);
                                 println!("dest = {}", dest);
                                 //todo: da comprimere ancora
                                 ComprimiFile::comprimi_rar(&nome_file_zip, dir_entry.path().to_str().unwrap_or(""));

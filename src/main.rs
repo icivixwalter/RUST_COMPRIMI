@@ -25,11 +25,6 @@ struct Argomenti {
 
 
 fn main() {
-    //variabili della funzione
-    // let estensioni_da_comprimere = vec!["pdf", "txt", "zip", "doc"];
-    // let path_sorgente = "c:\\CASA\\PROVA_RUST\\CARTELLA_PROVA";
-    // let path_destinazione = "./OUTPUT";
-
     //******************************* aggiunto per i parametri */
     //se da linea di comando inserisci -i e -o prende i valori
     //dai parametri altrimenti prende quelli dai file .txt
@@ -45,7 +40,6 @@ fn main() {
             }
         }
     }; // salva gli argomenti CLI in una nuova istanza della struct
-    println!("prova: {:?}", args);
 
     //***++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 

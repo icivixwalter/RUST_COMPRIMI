@@ -1,22 +1,62 @@
 use file_time::FileTime;
 use std::{fs, io::Error, process::Command};
 
+use clap::Parser;
+
 //importare un tuo file
 mod file_time;
+
+
+//COSTANTI PATH ARRIVO E PARTENZA
+const FILE_PARTENZA: &str = "C:\\CASA\\PROVA_RUST\\rust_comprimi_mese\\resources\\paths_Partenza.txt";
+const FILE_ARRIVO: &str = "C:\\CASA\\PROVA_RUST\\rust_comprimi_mese\\resources\\path_Arrivo.txt";
+
+/// Simple app for backup files and folders recursively from a file with a list of paths
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Argomenti {
+    // short: il parametro corto (-i), long: il parametro con nome completo --input-file-with-paths
+    #[clap(short = 'i', long)]
+    input_path: String,
+    #[clap(short = 'o', long)]
+    output_path: String, // se il path non esiste lo crea
+}
+
+
 
 fn main() {
     //variabili della funzione
     // let estensioni_da_comprimere = vec!["pdf", "txt", "zip", "doc"];
-    let path_sorgente = "c:\\CASA\\PROVA_RUST\\CARTELLA_PROVA";
-    let path_destinazione = "./OUTPUT";
+    // let path_sorgente = "c:\\CASA\\PROVA_RUST\\CARTELLA_PROVA";
+    // let path_destinazione = "./OUTPUT";
+
+    //******************************* aggiunto per i parametri */
+    //se da linea di comando inserisci -i e -o prende i valori
+    //dai parametri altrimenti prende quelli dai file .txt
+    //select case con 2 bracci
+    let args = match Argomenti::try_parse() {
+        Ok(arg) => arg,
+        Err(_) => {
+            let x = fs::read_to_string(FILE_ARRIVO.to_string());
+            let y = fs::read_to_string(FILE_PARTENZA.to_string());
+            Argomenti {
+                input_path: y.unwrap(),
+                output_path: x.unwrap(),
+            }
+        }
+    }; // salva gli argomenti CLI in una nuova istanza della struct
+    println!("prova: {:?}", args);
+
+    //***++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
 
     //03 istanzio la struct
-    let comprimi_file = ComprimiFile::new(path_sorgente, path_destinazione);
+    let comprimi_file = ComprimiFile::new(&args.input_path, &args.output_path);
     match comprimi_file.esegui() {
         Ok(_) => (),
         Err(err) => println!("errore : {}", err),
     }
-    println!("Hello, world!");
+    println!("fine procedura di compattamento rar!");
 }
 
 //01 creo una struct per i parametri
@@ -56,14 +96,14 @@ impl ComprimiFile {
                     //destrutturazione di una tupla = assegna ad anno e al mese i due
                     //valori recuperati dalla tupla istanza_file_time.get_anno_mese()
                     let (anno, mese) = istanza_file_time.get_anno_mese();
-                    let nome_file_zip = format!("{}-{}.rar", anno, mese);
+                    let nome_file_zip = format!("{}\\{}-{:#02}.rar",self.path_destinazione, anno, mese);
 
                     for anno_corrente in self.anno_inizio..=self.anno_fine {
                         for mese_corrente in 1..=12 {
                             if anno == anno_corrente && mese == mese_corrente {
                                 println!("nome del file = {}", nome_file_zip);
                                 println!("path del file = {:?}", dir_entry.path());
-                                let dest = format!("{}/{}", self.path_destinazione, nome_file_zip);
+                                let dest = format!("{}\\{}", self.path_destinazione, nome_file_zip);
                                 println!("dest = {}", dest);
                                 //todo: da comprimere ancora
                                 ComprimiFile::comprimi_rar(&nome_file_zip, dir_entry.path().to_str().unwrap_or(""));

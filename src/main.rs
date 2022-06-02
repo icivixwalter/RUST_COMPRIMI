@@ -1,3 +1,137 @@
+use file_time::FileTime;
+use std::{fs, io::Error, process::Command};
+
+//importare un tuo file
+mod file_time;
+
 fn main() {
+    //variabili della funzione
+    // let estensioni_da_comprimere = vec!["pdf", "txt", "zip", "doc"];
+    let path_sorgente = "c:\\CASA\\PROVA_RUST\\CARTELLA_PROVA";
+    let path_destinazione = "./OUTPUT";
+
+    //03 istanzio la struct
+    let comprimi_file = ComprimiFile::new(path_sorgente, path_destinazione);
+    match comprimi_file.esegui() {
+        Ok(_) => (),
+        Err(err) => println!("errore : {}", err),
+    }
     println!("Hello, world!");
+}
+
+//01 creo una struct per i parametri
+struct ComprimiFile {
+    anno_inizio: i32,
+    anno_fine: i32,
+    path_sorgente: String,
+    path_destinazione: String,
+}
+
+//02 implentazione metodi della struttura comprimi
+impl ComprimiFile {
+    //metodo statico che diventa costruttore con new
+    //creando una istanza di ComprimiFile
+    fn new(par_path_sorgente: &str, par_path_destinazione: &str) -> ComprimiFile {
+        ComprimiFile {
+            anno_inizio: 1950,
+            anno_fine: 2050,
+            //to_owned() = significa la traduzione da &str in String
+            path_sorgente: par_path_sorgente.to_owned(),
+            path_destinazione: par_path_destinazione.to_owned(),
+        }
+    }
+
+    //II metodo esegui &self = richiede l'istanza comprimi file
+    // perche non è statico
+    fn esegui(&self) -> Result<bool, Error> {
+        //for partendo dagli estremi anno inizio e fine del costruttore
+
+        let cartella = fs::read_dir(&self.path_sorgente)?;
+        for file in cartella {
+            match file {
+                Ok(dir_entry) => {
+                    //la path del file corrente
+                    let file_metadata = dir_entry.metadata()?;
+                    let istanza_file_time = FileTime::new(file_metadata);
+                    //destrutturazione di una tupla = assegna ad anno e al mese i due
+                    //valori recuperati dalla tupla istanza_file_time.get_anno_mese()
+                    let (anno, mese) = istanza_file_time.get_anno_mese();
+                    let nome_file_zip = format!("{}-{}.rar", anno, mese);
+
+                    for anno_corrente in self.anno_inizio..=self.anno_fine {
+                        for mese_corrente in 1..=12 {
+                            if anno == anno_corrente && mese == mese_corrente {
+                                println!("nome del file = {}", nome_file_zip);
+                                println!("path del file = {:?}", dir_entry.path());
+                                let dest = format!("{}/{}", self.path_destinazione, nome_file_zip);
+                                println!("dest = {}", dest);
+                                //todo: da comprimere ancora
+                                ComprimiFile::comprimi_rar(&nome_file_zip, dir_entry.path().to_str().unwrap_or(""));
+                            }
+                        }
+                    }
+                }
+                Err(errore) => println!("errore di ricerca del file: {}", errore),
+            }
+        }
+        Ok(true)
+    }
+
+    /// modello di comando multivolume per 10 mega
+    /// C:\CASA\Rar.exe a -r -u ZZ_SALVATAGGI_ARCHIVI_70_GENERICI *.* -v10m
+    fn comprimi_rar(par_nome_zip: &str, par_nome_file_archivio: &str) {
+        //istanzio il comando rar
+        let mut command = Command::new("c:\\CASA\\WinRAR\\Rar.exe");
+
+        //predispongo i successivi parametri di rar in un vettore
+        let argomenti = vec![
+            "U",
+            "-r",
+            "-ac",
+            par_nome_zip,
+            par_nome_file_archivio,
+            "-v1m",
+        ];
+        // prende l'istanza del comando a cui aggiunge gli argomenti rar
+        let command = command.args(&argomenti);
+
+        let mut s: String = String::new();
+        for arg in argomenti {
+            s.push_str(arg);
+            s.push(' ');
+        }
+
+        println!("Rar.exe {}", s);
+        //.output = eseguo il comando
+        command.output().expect("failed to execute process");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::*;
+
+    /*esempio di testo che viene fatto partire con cargo test  e siccome
+    contiene la asset_eq = effettua un vero calcolo di somma tra 2+2 e quindi il risultato
+    corretto per la riuscita del testo è 4 e non 3
+    Il test puo essere attivato singolarmente.
+    */
+
+    #[test]
+    fn test_farlocco() {
+        assert_eq!(2 + 2, 4, "Test fallito perche 2+2=4 non 3");
+    }
+
+    #[test]
+    fn comprimi_rar_test() {
+        ComprimiFile::comprimi_rar("prova.zip", "Cargo.toml");
+        let x = Path::new("prova.zip").exists();
+        assert!(x, "test fallito il file.zip non esiste");
+
+        ComprimiFile::comprimi_rar("prova2.zip", "c:\\CASA\\PROVA_RUST\\CARTELLA_PROVA\\");
+        let x = Path::new("prova2.zip.part01.rar").exists() || Path::new("prova2.zip").exists();
+        assert!(x, "test fallito il file.zip non esiste");
+    }
 }
